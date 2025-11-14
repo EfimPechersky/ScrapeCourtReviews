@@ -4,11 +4,7 @@ from selenium.common.exceptions import NoSuchElementException
 from bs4 import BeautifulSoup
 import json
 import time
-cService = wd.ChromeService(executable_path='C:/Users/cdtt3/AppData/Local/Programs/Python/Python312/chromedriver/chromedriver.exe')
-browser = wd.Chrome(service = cService)
-browser.get("https://yandex.ru/maps/")
-start=int(input())
-end=int(input())
+from memory_profiler import profile
 def get_reviews(browser, name):
     search_box = browser.find_element(By.XPATH,'//input[contains(@placeholder, "Поиск и выбор мест")]')
     search_box.send_keys(name)
@@ -63,7 +59,7 @@ def get_reviews(browser, name):
             date=r.find("span",{"class":"business-review-view__date"}).find("meta", {"itemprop":"datePublished"})["content"]
         except:
             date=r.find("span",{"class":"business-review-view__date"}).find("span").text
-        text=r.find("div",{"class":"business-review-view__body"}).find("span", {"class":"business-review-view__body-text"}).text
+        text=r.find("div",{"class":"business-review-view__body"}).find("span", {"class":"spoiler-view__text-container"}).text
         likes_counter=r.find("div",{"aria-label":"Лайк"}).find("div",{"class":"business-reactions-view__counter"})
         likes=0
         if likes_counter!=None:
@@ -82,22 +78,32 @@ def get_reviews(browser, name):
         reviews+=[review]
     close_button.click()
     return place_name,reviews
-all_courts={}
-with open("as_names.txt") as file:
-    names=file.read().split("\n")
-    count=0
-    for i in names[start:end]:
-        count+=1
-        res=get_reviews(browser,i)
-        if res!=None:
-            place_name,reviews=res
-            all_courts[place_name]=reviews
-        print(count+start-1)
-with open("as_data"+str(start)+str(end)+".json","w") as file:
-    json.dump(all_courts,file)
+@profile
+def main():
+    cService = wd.ChromeService(executable_path='C:/Users/cdtt3/AppData/Local/Programs/Python/Python312/chromedriver/chromedriver.exe')
+    browser = wd.Chrome(service = cService)
+    browser.get("https://yandex.ru/maps/")
+    start=0
+    end=10
+    all_courts={}
+    with open("gas/as_names.txt") as file:
+        names=file.read().split("\n")
+        count=0
+        for i in names[start:end]:
+            count+=1
+            res=get_reviews(browser,i)
+            if res!=None:
+                place_name,reviews=res
+                all_courts[place_name]=reviews
+            print(count+start-1)
+    browser.quit()
+    with open("as_data"+str(start)+str(end)+".json","w") as file:
+        json.dump(all_courts,file)
+if __name__=="__main__":
+    main()
 
 #nametest=input()
 #review1=get_reviews(browser,nametest)
 #print(review1)
-    
+
         
